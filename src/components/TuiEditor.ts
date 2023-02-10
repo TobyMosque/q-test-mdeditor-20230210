@@ -29,51 +29,94 @@ export default defineComponent({
     modelValue: String,
     height: {
       type: Number,
-      default: 500,
+      default: 350,
     },
     editorType: {
       type: String as PropType<EditorType>,
       default: 'markdownx',
     },
+    markdown: {
+      type: Boolean,
+      default: false,
+    },
     previewStyle: {
       type: String as PropType<PreviewStyle>,
       default: 'vertical',
+    },
+    hideModeSwitch: {
+      type: Boolean,
+      default: false,
     },
   },
   setup(props, { emit, slots }) {
     const elem = ref<HTMLDivElement>();
     const editor = ref<Editor>();
 
+    let _editorType = props.editorType || 'markdown';
     const options = computed(
       () =>
         ({
           height: `${props.height}px`,
           initialEditType: props.editorType,
           previewStyle: props.previewStyle,
+          hideModeSwitch: props.hideModeSwitch,
         } as EditorOptions)
     );
 
     watch(
       () => options.value,
-      () => {
-        if (editor.value) {
-          if (options.value.height) {
-            editor.value.setHeight(options.value.height);
-          }
-          if (options.value.previewStyle) {
-            editor.value.changePreviewStyle(options.value.previewStyle);
-          }
-          if (options.value.initialEditType) {
-            editor.value.changeMode(options.value.initialEditType);
-          }
+      (newValue, oldValue) => {
+        if (
+          options.value.hideModeSwitch &&
+          newValue.hideModeSwitch !== oldValue.hideModeSwitch
+        ) {
+          initEditor();
+          return;
+        }
+        if (!editor.value) {
+          return;
+        }
+        const { height, previewStyle, initialEditType: editorMode } = newValue;
+        if (height && height !== oldValue.height) {
+          editor.value.setHeight(height);
+        }
+        if (previewStyle && previewStyle !== oldValue.previewStyle) {
+          editor.value.changePreviewStyle(previewStyle);
+        }
+        if (editorMode && editorMode !== oldValue.initialEditType) {
+          editor.value.changeMode(editorMode);
+          _editorType = editorMode;
         }
       }
     );
 
     provide(editorKey, editor);
-    onMounted(() => {
+
+    function updateValue() {
+      let modelValue = '';
+      if (editor.value) {
+        if (props.markdown) {
+          modelValue = editor.value.getMarkdown();
+        } else {
+          switch (_editorType) {
+            case 'markdown':
+              modelValue = editor.value.getMarkdown();
+              break;
+            case 'wysiwyg':
+              modelValue = editor.value.getHTML();
+              break;
+          }
+        }
+      }
+      if (modelValue != props.modelValue) emit('update:modelValue', modelValue);
+    }
+
+    function initEditor() {
       if (!elem.value) {
         return;
+      }
+      if (editor.value) {
+        editor.value.destroy();
       }
       editor.value = new Editor({
         ...options.value,
@@ -83,34 +126,32 @@ export default defineComponent({
             let height = 500;
             let previewStyle: PreviewStyle = 'vertical';
             let editorType: EditorType = 'markdown';
-            let modelValue = '';
             if (editor.value) {
               const txtHeight = editor.value.getHeight().replace(/[^0-9]/g, '');
               if (txtHeight) height = parseInt(txtHeight);
               previewStyle = editor.value.getCurrentPreviewStyle();
               if (editor.value.isMarkdownMode()) editorType = 'markdown';
               else if (editor.value.isWysiwygMode()) editorType = 'wysiwyg';
-              switch (editorType) {
-                case 'markdown':
-                  modelValue = editor.value.getMarkdown();
-                  break;
-                case 'wysiwyg':
-                  modelValue = editor.value.getHTML();
-                  break;
-              }
             }
 
             if (height != props.height) emit('update:height', height);
-            if (editorType != props.editorType)
+            if (editorType != props.editorType) {
               emit('update:editorType', editorType);
-            if (previewStyle != props.previewStyle)
+              _editorType = editorType;
+            }
+            if (previewStyle != props.previewStyle) {
               emit('update:previewStyle', previewStyle);
-            if (modelValue != props.modelValue)
-              emit('update:modelValue', modelValue);
+            }
+            updateValue();
           },
         },
       });
-    });
+    }
+    onMounted(() => initEditor());
+    watch(
+      () => props.markdown,
+      () => updateValue()
+    );
     return () =>
       h(
         'div',
