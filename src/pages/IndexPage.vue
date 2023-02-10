@@ -6,6 +6,7 @@
           v-model="markdown"
           label="Does the output would be a Markdown?"
         ></q-toggle>
+        <q-toggle v-model="hideMode" label="Hide Mode Switch"></q-toggle>
       </q-card-section>
     </q-card>
     <q-card class="q-ma-sm">
@@ -16,6 +17,7 @@
         v-model="text"
         v-model:editor-type="mode"
         :markdown="markdown"
+        :hide-mode-switch="hideMode"
       >
         <tui-editor-child></tui-editor-child>
       </tui-editor>
@@ -70,5 +72,6 @@ import { ref } from 'vue';
 
 const text = ref('');
 const markdown = ref(false);
+const hideMode = ref(false);
 const mode = ref<EditorType>('markdown');
 </script>

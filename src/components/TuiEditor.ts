@@ -66,17 +66,20 @@ export default defineComponent({
     watch(
       () => options.value,
       (newValue, oldValue) => {
-        if (
-          options.value.hideModeSwitch &&
-          newValue.hideModeSwitch !== oldValue.hideModeSwitch
-        ) {
+        const {
+          height,
+          previewStyle,
+          initialEditType: editorMode,
+          hideModeSwitch: hideMode,
+        } = newValue;
+        if (hideMode !== undefined && hideMode !== oldValue.hideModeSwitch) {
           initEditor();
           return;
         }
         if (!editor.value) {
           return;
         }
-        const { height, previewStyle, initialEditType: editorMode } = newValue;
+
         if (height && height !== oldValue.height) {
           editor.value.setHeight(height);
         }
@@ -121,6 +124,7 @@ export default defineComponent({
       editor.value = new Editor({
         ...options.value,
         el: elem.value,
+        initialValue: props.modelValue,
         events: {
           change() {
             let height = 500;
