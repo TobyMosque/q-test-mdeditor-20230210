@@ -10,6 +10,17 @@
     </q-card>
     <q-card class="q-ma-sm">
       <q-card-section>
+        <span class="text-h6 text-center"> Tui Editor Viewer </span>
+      </q-card-section>
+      <q-card-section v-if="text">
+        <tui-viewer :content="text"></tui-viewer>
+      </q-card-section>
+      <template v-else>
+        <q-banner class="bg-warning text-dark">nothing to show</q-banner>
+      </template>
+    </q-card>
+    <q-card class="q-ma-sm">
+      <q-card-section>
         <span class="text-h6 text-center">
           <template v-if="mode === 'markdown'">
             QMarkdown App Extension (Output)
@@ -35,6 +46,7 @@
 <script setup lang="ts">
 import { EditorType } from '@toast-ui/editor';
 import TuiEditor from 'src/components/TuiEditor';
+import TuiViewer from 'src/components/TuiViewer';
 import TuiEditorChild from 'src/components/TuiEditorChild';
 import { ref } from 'vue';
 
